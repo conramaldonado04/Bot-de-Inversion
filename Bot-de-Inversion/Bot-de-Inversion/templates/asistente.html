@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Asistente{% endblock %}
+{% block content %}
+<h1>Asistente</h1>
+<p class="subtitle">Pedile cambios en lenguaje natural: montos, papeles seguidos, o que busque nuevas opciones con datos reales de mercado y noticias.</p>
+
+<div class="card">
+  <form method="post" class="inline-form" style="align-items: flex-start;">
+    <input type="text" name="mensaje" placeholder="Ej: asignale 50000 a GGAL" style="flex: 1; width: auto;" value="{{ mensaje_usuario or '' }}" autofocus>
+    <button type="submit">Enviar</button>
+  </form>
+</div>
+
+{% if respuesta %}
+<div class="card">
+  <h2>Respuesta</h2>
+  <p style="font-size: 14px; line-height: 1.6; white-space: pre-line;">{{ respuesta }}</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Historial de chat</h2>
+  {% if historial|length == 0 %}
+    <p class="empty-state">Todavía no le pediste nada al Asistente.</p>
+  {% else %}
+  <div style="display: flex; flex-direction: column; gap: 14px; max-height: 420px; overflow-y: auto;">
+    {% for h in historial %}
+    <div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 3px;">{{ h.fecha }}</div>
+      <div style="font-size: 13.5px;"><strong>Vos:</strong> {{ h.mensaje }}</div>
+      <div style="font-size: 13.5px; white-space: pre-line;"><strong>Asistente:</strong> {{ h.respuesta }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Ejemplos de pedidos</h2>
+  <ul style="color: var(--text-muted); font-size: 13.5px; line-height: 2;">
+    <li>"Cambiá el capital total a 500000"</li>
+    <li>"Asignale 30000 a YPFD"</li>
+    <li>"Agregá AAPL a la lista"</li>
+    <li>"Sacá PLTR de la lista"</li>
+    <li>"No vendas las tenencias actuales, operá solo con capital nuevo"</li>
+    <li>"Buscá nuevas opciones de inversión"</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>De dónde saca la información</h2>
+  <ul style="color: var(--text-muted); font-size: 13.5px; line-height: 1.8;">
+    <li><strong>Screener cuantitativo:</strong> volumen y volatilidad real de los últimos 30 días (Yahoo Finance), sobre Merval + CEDEARs líderes.</li>
+    <li><strong>IOL:</strong> precios e histórico propios (cotización, cartera), base de las medias 9/12. Su API no tiene noticias, por eso se complementa con las fuentes de abajo.</li>
+    <li><strong>Ámbito Financiero:</strong> titulares del día de economía y mercados (RSS oficial).</li>
+    <li><strong>El Cronista:</strong> titulares de la sección Finanzas y Mercados.</li>
+    <li><strong>Bloomberg Línea:</strong> titulares de la sección Argentina (macro y mercados).</li>
+    <li><strong>Investing.com:</strong> titulares globales de mercado, sobre todo para CEDEARs de empresas de EEUU.</li>
+    <li><strong>Rava Bursátil:</strong> resumen con IA y menciones recientes por papel puntual (rava.com/perfil).</li>
+    <li><strong>Yahoo Finance noticias:</strong> titulares recientes para CEDEARs/tickers de EEUU.</li>
+  </ul>
+  <p style="color: var(--text-muted); font-size: 12.5px; margin-top: 10px;">Gemini nunca inventa tickers ni precios de memoria: siempre parte de estos datos reales antes de opinar.</p>
+</div>
+{% endblock %}

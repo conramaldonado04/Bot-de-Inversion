@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Panel de Trading{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">◆</span>
+      <span class="brand-name">Cartera Activa</span>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Tenencias</a>
+      <a href="{{ url_for('config') }}" class="{{ 'active' if request.endpoint == 'config' }}">Configuración</a>
+      <a href="{{ url_for('historial') }}" class="{{ 'active' if request.endpoint == 'historial' }}">Historial</a>
+      <a href="{{ url_for('balances_view') }}" class="{{ 'active' if request.endpoint == 'balances_view' }}">Balances</a>
+      <a href="{{ url_for('asistente_view') }}" class="{{ 'active' if request.endpoint == 'asistente_view' }}">Asistente</a>
+    </nav>
+  </aside>
+  <main class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack">
+        {% for categoria, mensaje in messages %}
+          <div class="flash flash--{{ categoria }}">{{ mensaje }}</div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

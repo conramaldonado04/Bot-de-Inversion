@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Balances{% endblock %}
+{% block content %}
+<style>
+  .content { max-width: 1180px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+  .tabs a { padding: 7px 16px; border-radius: 6px; border: 1px solid var(--border); color: var(--text-muted); font-size: 14px; font-weight: 500; }
+  .tabs a.active { background: var(--surface-2); color: var(--text); border-color: var(--accent); }
+  .kpis { display: flex; flex-wrap: wrap; gap: 28px; margin: 4px 0 6px 0; }
+  .kpis .summary-item .value { font-size: 18px; }
+  details { margin-top: 14px; }
+  details > summary { cursor: pointer; color: var(--text-muted); font-size: 13.5px; padding: 6px 0; }
+  details > summary:hover { color: var(--text); }
+  .periodo-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .periodo-head h2 { margin: 0; font-size: 17px; }
+  .periodo-head .big { font-family: var(--font-num); font-size: 20px; font-weight: 600; }
+  .motivo { color: var(--text-muted); font-size: 12.5px; max-width: 280px; }
+  .nota { color: var(--text-muted); font-size: 12.5px; margin-top: 8px; }
+  .scroll-x { overflow-x: auto; }
+  td, th { white-space: nowrap; }
+  td.motivo { white-space: normal; }
+</style>
+
+<h1>Balances</h1>
+<p class="subtitle">Qué se compró y vendió, a qué precio y cuánto se ganó o perdió. El resultado se cuenta al vender (operaciones cerradas).</p>
+
+<div class="tabs">
+  <a href="{{ url_for('balances_view', vista='mensual') }}" class="{{ 'active' if vista == 'mensual' }}">Mensual</a>
+  <a href="{{ url_for('balances_view', vista='anual') }}" class="{{ 'active' if vista == 'anual' }}">Anual</a>
+</div>
+
+{% macro pesos(x) %}{{ "{:,.0f}".format(x) }}{% endmacro %}
+{% macro signo(x) %}{{ "+" if x >= 0 else "-" }}${{ "{:,.0f}".format(x|abs) }}{% endmacro %}
+
+<div class="card">
+  <h2>Total acumulado</h2>
+  <div class="kpis">
+    <div class="summary-item"><div class="label">Resultado neto (estimado)</div>
+      <div class="value {{ 'positive' if total.neto >= 0 else 'negative' }}">{{ signo(total.neto) }}</div></div>
+    <div class="summary-item"><div class="label">Ganancias</div><div class="value positive">{{ signo(total.ganancia) }}</div></div>
+    <div class="summary-item"><div class="label">Pérdidas</div><div class="value negative">{{ signo(total.perdida) }}</div></div>
+    <div class="summary-item"><div class="label">Operaciones cerradas</div><div class="value">{{ total.cerradas }}</div></div>
+    <div class="summary-item"><div class="label">% de aciertos</div>
+      <div class="value">{% if total.acierto is not none %}{{ "%.0f"|format(total.acierto) }}%{% else %}—{% endif %}</div></div>
+    <div class="summary-item"><div class="label">Comisiones (est.)</div><div class="value">${{ pesos(total.comisiones) }}</div></div>
+  </div>
+  <div class="nota">El neto descuenta una comisión estimada de {{ comision }}% por compra y por venta. El resultado de lo que sigue en cartera no está incluido: se ve en Tenencias.</div>
+</div>
+
+{% if periodos|length == 0 %}
+  <div class="card"><p class="empty-state">Todavía no hay movimientos registrados.</p></div>
+{% endif %}
+
+{% for p in periodos %}
+<div class="card" id="p-{{ p.clave }}">
+  <div class="periodo-head">
+    <h2>{{ p.etiqueta }}</h2>
+    <span class="big {{ 'positive' if p.resumen.neto >= 0 else 'negative' }}">{{ signo(p.resumen.neto) }}</span>
+  </div>
+  <div class="kpis">
+    <div class="summary-item"><div class="label">Compras</div><div class="value">{{ p.resumen.compras }} · ${{ pesos(p.resumen.comprado) }}</div></div>
+    <div class="summary-item"><div class="label">Ventas</div><div class="value">{{ p.resumen.ventas }} · ${{ pesos(p.resumen.vendido) }}</div></div>
+    <div class="summary-item"><div class="label">Ganadoras / perdedoras</div><div class="value"><span class="positive">{{ p.resumen.ganadoras }}</span> / <span class="negative">{{ p.resumen.perdedoras }}</span></div></div>
+    <div class="summary-item"><div class="label">% de aciertos</div>
+      <div class="value">{% if p.resumen.acierto is not none %}{{ "%.0f"|format(p.resumen.acierto) }}%{% else %}—{% endif %}</div></div>
+    <div class="summary-item"><div class="label">Bruto</div><div class="value {{ 'positive' if p.resumen.bruto >= 0 else 'negative' }}">{{ signo(p.resumen.bruto) }}</div></div>
+    <div class="summary-item"><div class="label">Comisiones (est.)</div><div class="value">${{ pesos(p.resumen.comisiones) }}</div></div>
+  </div>
+
+  {% if vista == 'anual' and p.meses %}
+  <details open>
+    <summary>Mes por mes</summary>
+    <table>
+      <thead><tr><th>Mes</th><th class="num">Compras</th><th class="num">Ventas</th><th class="num">Ganadoras</th><th class="num">Perdedoras</th><th class="num">Neto (est.)</th></tr></thead>
+      <tbody>
+      {% for m in p.meses %}
+        <tr><td>{{ m.etiqueta }}</td><td class="num">{{ m.resumen.compras }}</td><td class="num">{{ m.resumen.ventas }}</td>
+          <td class="num positive">{{ m.resumen.ganadoras }}</td><td class="num negative">{{ m.resumen.perdedoras }}</td>
+          <td class="num {{ 'positive' if m.resumen.neto >= 0 else 'negative' }}">{{ signo(m.resumen.neto) }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </details>
+  {% endif %}
+
+  <details {{ 'open' if vista == 'mensual' }}>
+    <summary>Operaciones cerradas ({{ p.operaciones|length }})</summary>
+    {% if p.operaciones %}
+    <div class="scroll-x"><table>
+      <thead><tr><th>Papel</th><th>Compra</th><th>Venta</th><th class="num">Cant.</th><th class="num">Precio compra</th><th class="num">Precio venta</th>
+        <th class="num">Resultado</th><th class="num">%</th><th class="num">Neto (est.)</th><th>Motivo</th></tr></thead>
+      <tbody>
+      {% for o in p.operaciones %}
+        <tr>
+          <td class="symbol">{{ o.simbolo }}</td>
+          <td>{{ o.fecha_compra or 'antes del bot' }}</td>
+          <td>{{ o.fecha_venta }}</td>
+          <td class="num">{{ "%g"|format(o.cantidad) }}</td>
+          <td class="num">{% if o.precio_compra is not none %}${{ "{:,.2f}".format(o.precio_compra) }}{% else %}—{% endif %}</td>
+          <td class="num">${{ "{:,.2f}".format(o.precio_venta) }}</td>
+          {% if o.neto is not none %}
+          <td class="num {{ 'positive' if o.bruto >= 0 else 'negative' }}">{{ signo(o.bruto) }}</td>
+          <td class="num {{ 'positive' if o.pct >= 0 else 'negative' }}">{{ "%+.1f"|format(o.pct) }}%</td>
+          <td class="num {{ 'positive' if o.neto >= 0 else 'negative' }}">{{ signo(o.neto) }}</td>
+          {% else %}
+          <td class="num" colspan="3" title="No se conoce el precio de compra">sin costo de compra</td>
+          {% endif %}
+          <td class="motivo">{{ (o.motivo or '')[:110] }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}<p class="empty-state">No hubo ventas en este período.</p>{% endif %}
+  </details>
+
+  <details>
+    <summary>Todos los movimientos ({{ p.movimientos|length }})</summary>
+    <div class="scroll-x"><table>
+      <thead><tr><th>Fecha</th><th>Papel</th><th>Tipo</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Importe</th></tr></thead>
+      <tbody>
+      {% for m in p.movimientos %}
+        <tr><td>{{ m.fecha }}</td><td class="symbol">{{ m.simbolo }}</td>
+          <td class="{{ 'positive' if m.tipo == 'compra' else 'negative' }}">{{ m.tipo|capitalize }}</td>
+          <td class="num">{{ m.cantidad }}</td><td class="num">${{ "{:,.2f}".format(m.precio) }}</td>
+          <td class="num">${{ "{:,.2f}".format(m.importe or (m.cantidad * m.precio)) }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </details>
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Configuración{% endblock %}
+{% block content %}
+<h1>Configuración</h1>
+<p class="subtitle">Definí cuánto capital destinás a tradear y cómo lo repartís entre los papeles que seguís.</p>
+
+<div class="card">
+  <h2>Capital total destinado a trading</h2>
+  <form method="post" class="inline-form">
+    <input type="hidden" name="accion" value="capital_total">
+    <input type="number" step="0.01" name="capital_total" value="{{ capital_total }}">
+    <button type="submit">Guardar</button>
+  </form>
+</div>
+
+<div class="summary-row">
+  <div class="summary-item">
+    <div class="label">Capital total</div>
+    <div class="value">${{ "%.0f"|format(capital_total) }}</div>
+  </div>
+  <div class="summary-item">
+    <div class="label">Asignado a papeles</div>
+    <div class="value">${{ "%.0f"|format(monto_asignado_total) }}</div>
+  </div>
+  <div class="summary-item">
+    <div class="label">Sin asignar</div>
+    <div class="value {{ 'negative' if disponible < 0 else '' }}">${{ "%.0f"|format(disponible) }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Papeles seguidos</h2>
+  {% if papeles|length == 0 %}
+    <p class="empty-state">Todavía no agregaste ningún papel.</p>
+  {% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>Papel</th>
+        <th class="num">Monto asignado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in papeles %}
+      <tr>
+        <td><span class="symbol">{{ p.simbolo }}</span></td>
+        <td class="num">
+          <form method="post" class="inline-form" style="justify-content: flex-end;">
+            <input type="hidden" name="accion" value="monto_papel">
+            <input type="hidden" name="simbolo" value="{{ p.simbolo }}">
+            <input type="number" step="0.01" name="monto" value="{{ p.monto_asignado }}">
+            <button type="submit" class="secondary">Guardar</button>
+          </form>
+        </td>
+        <td class="num">
+          <form method="post" onsubmit="return confirm('¿Quitar {{ p.simbolo }} de la lista?');">
+            <input type="hidden" name="accion" value="quitar_papel">
+            <input type="hidden" name="simbolo" value="{{ p.simbolo }}">
+            <button type="submit" class="danger">Quitar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Agregar un papel nuevo</h2>
+  <form method="post" class="inline-form">
+    <input type="hidden" name="accion" value="agregar_papel">
+    <input type="text" name="nuevo_simbolo" placeholder="Ej: AAPL">
+    <button type="submit">Agregar</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Instrucciones permanentes para el bot</h2>
+  <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">
+    Cosas que le pediste al Asistente que respete siempre en sus decisiones de compra/venta (ej: "no vender las tenencias actuales"). Se le pasan a Gemini en cada ciclo del bot — es un pedido, no una regla de código forzada.
+  </p>
+  {% if instrucciones|length == 0 %}
+    <p class="empty-state">Todavía no hay instrucciones guardadas. Pedíselas al Asistente, o agregá una acá.</p>
+  {% else %}
+  <table>
+    <tbody>
+      {% for i in instrucciones %}
+      <tr>
+        <td>{{ i }}</td>
+        <td class="num">
+          <form method="post" onsubmit="return confirm('¿Quitar esta instrucción?');">
+            <input type="hidden" name="accion" value="quitar_instruccion">
+            <input type="hidden" name="texto" value="{{ i }}">
+            <button type="submit" class="danger">Quitar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  <form method="post" class="inline-form" style="margin-top: 12px;">
+    <input type="hidden" name="accion" value="agregar_instruccion">
+    <input type="text" name="nueva_instruccion" placeholder="Ej: no vender las tenencias actuales" style="flex: 1; width: auto;">
+    <button type="submit">Agregar</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Historial{% endblock %}
+{% block content %}
+<h1>Historial de movimientos</h1>
+<p class="subtitle">Compras y ventas registradas.</p>
+
+{% if movimientos|length == 0 %}
+  <div class="card">
+    <p class="empty-state">Todavía no hay movimientos registrados. Cuando el bot empiece a operar, cada compra y venta va a aparecer acá.</p>
+  </div>
+{% else %}
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Papel</th>
+          <th>Tipo</th>
+          <th class="num">Cantidad</th>
+          <th class="num">Precio</th>
+          <th class="num">Importe</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in movimientos %}
+        <tr>
+          <td>{{ m.fecha }}</td>
+          <td class="symbol">{{ m.simbolo }}</td>
+          <td class="{{ 'positive' if m.tipo == 'compra' else 'negative' }}">{{ m.tipo|capitalize }}</td>
+          <td class="num">{{ m.cantidad }}</td>
+          <td class="num">${{ "%.2f"|format(m.precio) }}</td>
+          <td class="num">${{ "%.2f"|format(m.importe) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}
